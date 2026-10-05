@@ -1,0 +1,355 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Inventaire Hebdo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@500;600;700&display=swap">
+<style>
+:root{
+  --bg:#EEF3F8; --panel:#FFFFFF; --ink:#0E1E2E; --muted:#5B6C7D; --line:#D6E0EA;
+  --blue:#0A4C86; --blue-2:#0E64AD; --red:#D2283A; --on-blue:#FFFFFF;
+  --ok:#16824A; --ok-bg:#E2F4EA; --warn:#B4610A; --warn-bg:#FDF0DF; --chip:#E4ECF4;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#0A1420; --panel:#13212F; --ink:#E8F0F8; --muted:#93A6B8; --line:#24384C;
+    --blue:#0B3D6B; --blue-2:#3D8FD6; --red:#FF5465; --on-blue:#FFFFFF;
+    --ok:#4FD08A; --ok-bg:#123324; --warn:#F2A54A; --warn-bg:#3A2610; --chip:#1C3045;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#0A1420; --panel:#13212F; --ink:#E8F0F8; --muted:#93A6B8; --line:#24384C;
+  --blue:#0B3D6B; --blue-2:#3D8FD6; --red:#FF5465; --on-blue:#FFFFFF;
+  --ok:#4FD08A; --ok-bg:#123324; --warn:#F2A54A; --warn-bg:#3A2610; --chip:#1C3045;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:600 16px/1.35 Barlow,system-ui,sans-serif;padding-inline:0;padding-block:0 60px}
+.wrap{max-width:720px;margin:0 auto;padding-inline:16px}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer}
+button:focus-visible,input:focus-visible{outline:3px solid var(--red);outline-offset:2px}
+h1,h2,.cond{font-family:"Barlow Condensed","Arial Narrow",sans-serif;margin:0;text-wrap:balance}
+
+/* header */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--blue);color:var(--on-blue);box-shadow:0 2px 10px rgba(0,0,0,.15)}
+.top .wrap{padding-block:12px 0}
+.row1{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.title{display:flex;align-items:center;gap:10px}
+.mark{width:34px;height:34px;border-radius:8px;background:var(--red);display:grid;place-items:center;font:800 15px "Barlow Condensed",sans-serif;letter-spacing:.04em}
+.title h1{font-size:24px;line-height:1;text-transform:uppercase;letter-spacing:.02em}
+.title small{display:block;font:600 12px Barlow,sans-serif;opacity:.8}
+.date{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.12);border-radius:10px;padding:4px 8px}
+.date input{background:transparent;border:0;color:var(--on-blue);font-weight:700;width:132px;color-scheme:dark}
+.steps{display:flex;gap:6px;overflow-x:auto;padding-block:12px;scrollbar-width:none}
+.steps::-webkit-scrollbar{display:none}
+.step{flex:0 0 auto;display:flex;align-items:center;gap:6px;border:0;border-radius:999px;padding:7px 12px;background:rgba(255,255,255,.12);color:var(--on-blue);font-weight:700;font-size:14px;white-space:nowrap}
+.step .n{width:20px;height:20px;border-radius:50%;background:rgba(255,255,255,.2);display:grid;place-items:center;font-size:12px}
+.step[aria-current="true"]{background:var(--on-blue);color:var(--blue)}
+.step[aria-current="true"] .n{background:var(--red);color:#fff}
+.step.done .n{background:#2FB56A;color:#fff}
+.bar{height:4px;background:rgba(255,255,255,.18)}
+.bar i{display:block;height:100%;background:var(--red);transition:width .25s}
+
+/* zone */
+.zhead{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;padding-block:18px 10px}
+.zhead h2{font-size:30px;line-height:1;text-transform:uppercase;color:var(--blue-2)}
+.zhead p{margin:4px 0 0;color:var(--muted);font-size:14px;font-weight:500}
+.count{font:700 14px Barlow,sans-serif;color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
+.hint{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-size:13px;font-weight:500;color:var(--muted);margin-bottom:10px}
+.hint b{color:var(--ink)}
+.list{background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.item{display:grid;grid-template-columns:38px 1fr 104px;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid var(--line)}
+.item:last-child{border-bottom:0}
+.num{font:700 13px Barlow,sans-serif;color:var(--muted);background:var(--chip);border-radius:7px;text-align:center;padding:3px 0;font-variant-numeric:tabular-nums}
+.name{min-width:0}
+.name b{display:block;font-size:16px;line-height:1.2}
+.name span{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.name em{font-style:normal;font-size:12px;color:var(--blue-2);margin-left:6px;text-transform:none;letter-spacing:0}
+.qty{width:100%;text-align:right;padding:10px 10px;border-radius:10px;border:2px solid var(--line);background:var(--bg);font-weight:700;font-size:18px;font-variant-numeric:tabular-nums}
+.qty.filled{border-color:var(--blue-2);background:var(--panel)}
+.qty.bad{border-color:var(--red)}
+.calc{grid-column:3;text-align:right;font-size:12px;color:var(--blue-2);margin-top:-6px}
+.nav{display:flex;gap:10px;margin-top:16px}
+.btn{flex:1;border:0;border-radius:12px;padding:14px;font:800 19px "Barlow Condensed",sans-serif;text-transform:uppercase;letter-spacing:.04em;background:var(--blue-2);color:#fff}
+.btn.sec{background:var(--panel);color:var(--ink);border:2px solid var(--line)}
+.btn.red{background:var(--red)}
+
+/* saisie */
+.sum{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+.sum div{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px;text-align:center}
+.sum b{display:block;font:800 26px "Barlow Condensed",sans-serif;font-variant-numeric:tabular-nums}
+.sum span{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.sum .w b{color:var(--warn)}
+.tools{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+.toggle{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--muted)}
+.toggle input{width:20px;height:20px;accent-color:var(--blue-2)}
+.srow{display:grid;grid-template-columns:38px 1fr auto 34px;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid var(--line)}
+.srow:last-child{border-bottom:0}
+.srow .tot{font:800 22px "Barlow Condensed",sans-serif;text-align:right;font-variant-numeric:tabular-nums;min-width:64px}
+.srow .tot small{display:block;font:600 11px Barlow,sans-serif;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.srow .det{font-size:12px;color:var(--muted);font-weight:500}
+.srow.miss .tot{color:var(--warn)}
+.srow.miss{background:var(--warn-bg)}
+.srow.done{opacity:.45}
+.srow.done .name b{text-decoration:line-through}
+.chk{width:30px;height:30px;border-radius:8px;border:2px solid var(--line);background:var(--bg);display:grid;place-items:center;font-size:16px;color:transparent}
+.chk[aria-pressed="true"]{background:var(--ok);border-color:var(--ok);color:#fff}
+.confirm{background:var(--warn-bg);border:2px solid var(--warn);border-radius:12px;padding:12px;margin-top:12px;font-size:14px}
+.confirm .nav{margin-top:10px}
+.vtog{border:2px solid var(--line);background:var(--panel);border-radius:999px;padding:6px 12px;font-weight:700;font-size:13px;white-space:nowrap}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:18px;overflow:hidden}
+.cprog{padding:12px 16px 0;font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.mini{height:6px;border-radius:99px;background:var(--chip);margin-top:6px;overflow:hidden}
+.mini i{display:block;height:100%;background:var(--blue-2);transition:width .2s}
+.cbody{padding:18px 16px 8px;text-align:center}
+.cnum{display:inline-block;font:700 13px Barlow,sans-serif;background:var(--chip);color:var(--muted);border-radius:7px;padding:3px 10px;font-variant-numeric:tabular-nums}
+.cname{font:800 clamp(28px,8vw,38px)/1.05 "Barlow Condensed",sans-serif;margin-top:10px;text-wrap:balance}
+.cunit{font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--red);margin-top:6px}
+.cother{font-size:13px;color:var(--blue-2);margin-top:6px;min-height:18px}
+.big{width:100%;margin-top:14px;text-align:center;font:800 40px "Barlow Condensed",sans-serif;padding:12px;border-radius:14px;border:3px solid var(--blue-2);background:var(--bg);font-variant-numeric:tabular-nums}
+.big.bad{border-color:var(--red)}
+.ccalc{min-height:20px;margin-top:6px;color:var(--blue-2);font-weight:700}
+.quick{display:flex;gap:8px;margin-top:8px}
+.qb{flex:1;border:2px solid var(--line);background:var(--bg);border-radius:10px;padding:10px 6px;font-weight:700;font-size:14px}
+.qb.flag[aria-pressed="true"]{background:var(--red);border-color:var(--red);color:#fff}
+.cnav{display:flex;gap:10px;padding:12px 16px 16px}
+.cnav .btn{flex:1}
+.btn:disabled{opacity:.35;cursor:default}
+.fl{color:var(--red)}
+.chk[data-unflag]{color:var(--muted)}
+.ctitle{font:800 20px "Barlow Condensed",sans-serif;text-transform:uppercase;margin:16px 0 8px;color:var(--ink)}
+.ctitle span{background:var(--red);color:#fff;border-radius:999px;padding:1px 9px;font-size:15px;margin-left:4px}
+.srow.out .tot{color:var(--red)}
+.copied{margin-top:8px;font-size:14px;color:var(--ok);min-height:18px}
+.cmdtxt{width:100%;min-height:160px;margin-top:8px;border-radius:10px;border:2px solid var(--line);background:var(--panel);padding:10px;font:500 14px Barlow,sans-serif}
+.foot{margin-top:22px;font-size:12px;color:var(--muted);font-weight:500}
+@media (max-width:420px){.title h1{font-size:20px;white-space:nowrap}.mark{display:none}.date input{width:118px;font-size:14px}.item{grid-template-columns:34px 1fr 92px}}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <div class="row1">
+      <div class="title"><div class="mark">INV</div><div><h1>Inventaire hebdo</h1><small id="dlabel"></small></div></div>
+      <label class="date"><span class="sr" hidden>Date</span><input type="date" id="date" aria-label="Date de l'inventaire"></label>
+    </div>
+    <nav class="steps" id="steps" aria-label="Étapes"></nav>
+  </div>
+  <div class="bar" aria-hidden="true"><i id="bar"></i></div>
+</header>
+
+<main class="wrap" id="app"></main>
+
+<script>
+/* ===== PRODUITS — ordre exact du logiciel ===== */
+const P=[
+[1,"Champignons","kg"],[2,"Sauce Sweet & Chili bouteille","bouteille"],[3,"Persil boîte 80 g","boîte"],[4,"Oignons","kg"],[5,"Tomates","kg"],[6,"Poivrons mélangés","kg"],[7,"Bacon","barquette"],[8,"Bâtonnets 3 fromages","kg"],[9,"Bâtonnets de raclette","unité"],[10,"Bouchées panées au fromage (Cheesy Crunch)","kg"],
+[11,"Bûche de chèvre","pièce"],[12,"Buffalo Wings","kg"],[13,"Chickenitos","kg"],[14,"Cookies fourrés","unité"],[15,"Crème fraîche","seau"],[16,"Crème sucrée","kg"],[17,"Kick'n'Chicken ingrédient pizza","unité"],[18,"Chickenitos ingrédient pizza","unité"],[19,"Fourme d'Ambert","sachet"],[20,"Mix râpé emmental","sachet"],
+[21,"Filets de poulet rôti","kg"],[22,"Frites Really Crunchy 2,5 kg","kg"],[23,"Haché au bœuf","kg"],[24,"Viande de kebab","sachet"],[25,"Jambon","sachet"],[26,"Kick'n'Chicken","kg"],[27,"Lardons","barquette"],[28,"Merguez hallal","sachet"],[29,"Mini beignets choco-noisette","barquette"],[30,"Mozzarella","sachet"],
+[31,"Pepperoni","kg"],[32,"Pommes de terre sautées","kg"],[33,"Reblochon","unité"],[34,"Sauce barbecue","kg"],[35,"Pâton Large (Dough 2018)","pâton"],[36,"Pâton Fine (Dough GOLF)","pâton"],[37,"Pâton Medium (Dough GOLF)","pâton"],[38,"Cornichons aigre-doux","unité"],[39,"Coca-Cola Cherry 33 cl","canette"],[40,"Coca-Cola Cherry 1,25 l","bouteille"],
+[41,"Coca-Cola Cherry Zéro","bouteille"],[42,"Coca-Cola Regular 33 cl","canette"],[43,"Coca-Cola Regular 1,25 l","bouteille"],[44,"Coca-Cola Zero 33 cl","canette"],[45,"Coca-Cola Triple Z 33 cl","canette"],[46,"Coca-Cola Zero 1,25 l","bouteille"],[47,"Sauce burger","kg"],[48,"Cristaline gazéifiée 50 cl","bouteille"],[49,"Cristaline plate 50 cl","bouteille"],[50,"Fanta Mangue Fruit du Dragon","canette"],
+[51,"Fanta Orange 33 cl","canette"],[52,"Fanta Orange 1,25 l","bouteille"],[53,"Fuzetea Pêche 33 cl","canette"],[54,"Fuzetea Pêche 1,25 l","bouteille"],[55,"Oasis Pomme Cassis 33 cl","canette"],[56,"Oasis Tropical 33 cl","canette"],[57,"Oasis Fraise Framboise","canette"],[58,"Monster Energy 50 cl","canette"],[59,"Oasis Tropical 1,5 l","bouteille"],[60,"Monster Energy Zero 50 cl","canette"],
+[61,"Sprite 1,25 l","bouteille"],[62,"Ananas en morceaux","unité"],[63,"Breadstick seasoning ail","kg"],[64,"Farine de maïs","kg"],[65,"Huile pimentée","carton"],[66,"Sauce tomate","sachet"],[67,"Miel","kg"],[68,"Crispy onions","sachet"],[69,"Olives Kalamata bio rondelles","sachet"],[70,"Nutella poche 1 kg","kg"],
+[71,"Oreos","kg"],[72,"Origan","sachet"],[73,"Trépied à pizza","sachet"],[74,"Sauce ail coupelles 25 g","carton"],[75,"Sauce algérienne","kg"],[76,"Sauce algérienne bouteille","bouteille"],[77,"Sauce algérienne coupelle","carton"],[78,"Sauce barbecue coupelle","carton"],[79,"Sauce curry mangue coupelle","carton"],[80,"Sauce sweet & spicy","carton"],
+[81,"Spray graissant Ouragan","pièce"],[82,"Thon à l'huile","sachet"],[83,"Ketchup coupelle","carton"],[84,"Whirl","bouteille"],[85,"D Box Large","liasse"],[86,"D Box Medium","liasse"],[87,"Boîte slizza tiroir","liasse"],[88,"Boîte slizza fond","liasse"],[89,"Boîte slizza languette","liasse"],[90,"Boîte moelleux","liasse"],
+[91,"Boîte MyBox","liasse"],[92,"Boîte small side","liasse"],[93,"D Box 16P","liasse"],[94,"Étiquettes 106 x 35 mm","rouleau"],[95,"Feuille de cuisson","sachet"],[96,"Gobelets 30 cl","carton"],[97,"Cuillères","carton"],[98,"Papier déco Cheesy Bread","carton"],[99,"Sac polypro","carton"],[100,"Grande boîte accompagnement","liasse"],
+[101,"Serviettes","sachet"],[102,"Kit couverts","carton"],[103,"Sac VAE tentatrices","carton"],[104,"B&J Cookie Dough Vegan","pièce"],[105,"B&J Chocolate Fudge Brownie 100 ml","pièce"],[106,"B&J Cookie Dough 100 ml","pièce"],[107,"B&J Vanilla Pecan Brittle 100 ml","pièce"],[108,"B&J Chocolate Fudge Brownie 465 ml","pièce"],[109,"B&J Caramel Brownie Party","pièce"],[110,"B&J Cookie Dough 465 ml","pièce"],
+[111,"B&J Vanilla Pecan Blondie","pièce"],[112,"Barre glacée Magnum","pièce"],[113,"Bouchées à partager Magnum","pièce"],[114,"Pot à partager Magnum","pièce"],[115,"Pot Magnum double caramel","pièce"],[116,"Couvercle gobelet","sachet"]
+].map(([n,name,u])=>({n,name,u}));
+const R=(a,b)=>Array.from({length:b-a+1},(_,i)=>a+i);
+const ZONES=[
+ {id:"rs",name:"Réserve sèche",short:"Rés. sèche",items:[3,38,...R(39,46),...R(48,61),63,64,65,66,67,68,70,71,72,73,74,77,78,79,80,81,83,84,...R(85,103),116]},
+ {id:"cf",name:"Chambre froide",short:"Ch. froide",items:[1,2,...R(4,37),47,62,69,75,76,82]},
+ {id:"pr",name:"Zone de production",short:"Production",items:[2,10,12,13,22,26,74,76,77,78,79,80,83,84,...R(85,93),96,99,100,101,103]},
+ {id:"bo",name:"Frigos boissons",short:"Boissons",items:[...R(39,46),...R(48,61)]},
+ {id:"gl",name:"Glaces",short:"Glaces",items:R(104,115)},
+];
+const byN=Object.fromEntries(P.map(p=>[p.n,p]));
+const zonesOf={};ZONES.forEach(z=>z.items.forEach(n=>(zonesOf[n]=zonesOf[n]||[]).push(z)));
+
+/* ===== OUTILS ===== */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const fmt=v=>{const r=Math.round(v*1000)/1000;return String(r).replace(".",",")};
+function evalQty(s){ // "2+1,5" -> 3.5 ; "" -> null ; invalide -> NaN
+ s=String(s||"").trim().replace(/,/g,".").replace(/\s/g,"");
+ if(!s)return null;
+ if(!/^[0-9.+]+$/.test(s)||/\+\+|^\+|\+$/.test(s))return NaN;
+ const parts=s.split("+").map(Number);
+ return parts.some(isNaN)?NaN:parts.reduce((a,b)=>a+b,0);
+}
+const store={get(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}},del(k){try{localStorage.removeItem(k)}catch(e){}}};
+function lastSunday(){const d=new Date();d.setDate(d.getDate()-d.getDay());const p=x=>String(x).padStart(2,"0");return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`}
+const fullDate=iso=>new Date(iso+"T12:00").toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
+
+/* ===== ÉTAT ===== */
+let S={date:lastSunday(),step:0,idx:{},view:"card",hideDone:false,confirm:false};
+let D=load(S.date);
+function load(date){const d=store.get("inv_"+date)||{};return {q:d.q||{},done:d.done||{},flag:d.flag||{}}}
+function save(){store.set("inv_"+S.date,D)}
+const key=(z,n)=>z+"_"+n;
+const val=(z,n)=>{const v=evalQty(D.q[key(z,n)]);return v!=null&&!isNaN(v)?v:null};
+const total=n=>{let t=0,any=false;(zonesOf[n]||[]).forEach(z=>{const v=val(z.id,n);if(v!=null){t+=v;any=true}});return any?t:null};
+const filled=z=>z.items.filter(n=>val(z.id,n)!=null).length;
+const NZ=ZONES.length, STEP_SAISIE=NZ, STEP_CMD=NZ+1;
+const toOrder=()=>P.filter(p=>{const t=total(p.n);return (t!=null&&t===0)||D.flag[p.n]});
+
+/* ===== RENDU ===== */
+function renderHeader(){
+ $("#date").value=S.date;
+ $("#dlabel").textContent=fullDate(S.date);
+ const steps=[...ZONES.map(z=>({label:z.short,done:filled(z)===z.items.length})),{label:"Saisie logiciel"},{label:"À commander"}];
+ $("#steps").innerHTML=steps.map((s,i)=>`<button class="step ${s.done?"done":""}" data-step="${i}" aria-current="${i===S.step}"><span class="n">${s.done?"✓":i+1}</span>${esc(s.label)}</button>`).join("");
+ updBar();
+ const cur=$("#steps").querySelector('[aria-current="true"]');if(cur)cur.scrollIntoView({block:"nearest",inline:"center"});
+}
+function updBar(){
+ const all=ZONES.reduce((a,z)=>a+z.items.length,0), f=ZONES.reduce((a,z)=>a+filled(z),0);
+ $("#bar").style.width=(f/all*100)+"%";
+ document.querySelectorAll("[data-step]").forEach((b,i)=>{if(i<NZ){const d=filled(ZONES[i])===ZONES[i].items.length;b.classList.toggle("done",d);b.querySelector(".n").textContent=d?"✓":i+1}});
+}
+function zoneHead(z,i){
+ return `<div class="zhead"><div><h2>${i+1}. ${esc(z.name)}</h2><p>${z.items.length} produits, dans l'ordre du logiciel</p></div>
+ <button class="vtog" id="vtog">${S.view==="card"?"Voir la liste":"Un par un"}</button></div>`;
+}
+function renderCard(z,i){
+ return zoneHead(z,i)+`<div class="card">
+  <div class="cprog"><span id="cpos"></span><div class="mini"><i id="cbar"></i></div></div>
+  <div class="cbody">
+   <div class="cnum" id="cnum"></div>
+   <div class="cname" id="cname"></div>
+   <div class="cunit" id="cunit"></div>
+   <div class="cother" id="cother"></div>
+   <input class="big" id="bigq" inputmode="decimal" enterkeyhint="next" autocomplete="off" placeholder="Quantité" aria-label="Quantité">
+   <div class="ccalc" id="ccalc"></div>
+   <div class="quick"><button class="qb" id="zero">Il n'y en a plus (0)</button><button class="qb flag" id="flag" aria-pressed="false">⚑ À commander</button></div>
+  </div>
+  <div class="cnav"><button class="btn sec" id="prev">← Retour</button><button class="btn" id="next">Suivant →</button></div>
+ </div>
+ <p class="foot">Laisse vide et appuie sur Suivant si tu ne trouves pas le produit : il apparaîtra en orange à la saisie. Tape <b>2+1,5</b> pour additionner plusieurs cartons.</p>`;
+}
+function fillCard(focus){
+ const z=ZONES[S.step], i=S.idx[z.id]||0, n=z.items[i], p=byN[n], k=key(z.id,n);
+ $("#cpos").textContent=`Produit ${i+1} / ${z.items.length} · ${filled(z)} comptés`;
+ $("#cbar").style.width=((i+1)/z.items.length*100)+"%";
+ $("#cnum").textContent="N° "+n;
+ $("#cname").textContent=p.name;
+ $("#cunit").textContent="En "+p.u;
+ const others=(zonesOf[n]||[]).filter(o=>o.id!==z.id);
+ $("#cother").innerHTML=others.length?"Aussi compté en : "+others.map(o=>{const v=val(o.id,n);return esc(o.short)+(v!=null?" ("+fmt(v)+")":"")}).join(", "):"";
+ const inp=$("#bigq");inp.value=D.q[k]??"";
+ inp.setAttribute("aria-label",p.name+" en "+p.u);
+ upCalc();
+ $("#flag").setAttribute("aria-pressed",!!D.flag[n]);
+ $("#prev").disabled=i===0;
+ $("#next").textContent=i+1<z.items.length?"Suivant →":(S.step+1<NZ?"Zone suivante →":"Voir la saisie →");
+ if(focus){inp.focus();inp.select()}
+}
+function upCalc(){
+ const inp=$("#bigq"),v=evalQty(inp.value);
+ inp.classList.toggle("bad",inp.value!==""&&isNaN(v));
+ $("#ccalc").textContent=inp.value.includes("+")&&v!=null&&!isNaN(v)?"= "+fmt(v):(inp.value!==""&&isNaN(v)?"Chiffres et + seulement":"");
+}
+function renderList(z,i){
+ return zoneHead(z,i)+`<div class="list">${z.items.map((n,j)=>{const p=byN[n],k=key(z.id,n),raw=D.q[k]??"",v=evalQty(raw);
+  const others=(zonesOf[n]||[]).filter(o=>o.id!==z.id).map(o=>o.short);
+  return `<div class="item"><div class="num">${n}</div><div class="name"><b>${esc(p.name)}${D.flag[n]?' <span class="fl">⚑</span>':""}</b><span>${esc(p.u)}</span>${others.length?`<em>+ ${esc(others.join(", "))}</em>`:""}</div>
+  <input class="qty ${raw!==""&&!isNaN(v)?"filled":""} ${raw!==""&&isNaN(v)?"bad":""}" data-k="${k}" inputmode="decimal" enterkeyhint="next" autocomplete="off" value="${esc(raw)}" placeholder="–" aria-label="${esc(p.name)} en ${esc(p.u)}"></div>`}).join("")}</div>
+ <div class="nav">${i>0?`<button class="btn sec" data-go="${i-1}">← Retour</button>`:""}<button class="btn" data-go="${i+1}">${i+1<NZ?"Suivant : "+esc(ZONES[i+1].short):"Voir la saisie"} →</button></div>`;
+}
+function renderSaisie(){
+ const rows=P.map(p=>({p,t:total(p.n)}));
+ const miss=rows.filter(r=>r.t==null).length, done=rows.filter(r=>D.done[r.p.n]).length;
+ return `<div class="zhead"><div><h2>Saisie logiciel</h2><p>Les ${P.length} produits dans l'ordre du logiciel, avec le total de toutes les zones.</p></div></div>
+ <div class="sum"><div><b>${P.length-miss}</b><span>Comptés</span></div><div class="${miss?"w":""}"><b>${miss}</b><span>Non comptés</span></div><div><b>${done}</b><span>Saisis</span></div></div>
+ <div class="tools"><label class="toggle"><input type="checkbox" id="hide" ${S.hideDone?"checked":""}> Masquer ce qui est déjà saisi</label></div>
+ <div class="list">${rows.filter(r=>!(S.hideDone&&D.done[r.p.n])).map(({p,t})=>{
+  const det=(zonesOf[p.n]||[]).map(z=>{const v=val(z.id,p.n);return v!=null?`${z.short} ${fmt(v)}`:null}).filter(Boolean);
+  return `<div class="srow ${t==null?"miss":""} ${D.done[p.n]?"done":""}"><div class="num">${p.n}</div>
+  <div class="name"><b>${esc(p.name)}</b>${det.length>1?`<div class="det">${esc(det.join(" + "))}</div>`:""}</div>
+  <div class="tot">${t==null?"–":fmt(t)}<small>${t==null?"non compté":esc(p.u)}</small></div>
+  <button class="chk" data-done="${p.n}" aria-pressed="${!!D.done[p.n]}" aria-label="Marquer ${esc(p.name)} comme saisi">✓</button></div>`}).join("")}</div>
+ <div class="nav"><button class="btn sec" data-go="${NZ-1}">← Retour</button><button class="btn" data-go="${STEP_CMD}">À commander →</button></div>`;
+}
+function renderCmd(){
+ const list=toOrder();
+ const zero=list.filter(p=>total(p.n)===0), fl=list.filter(p=>total(p.n)!==0);
+ const sec=(t,arr,cls)=>arr.length?`<h3 class="ctitle">${t} <span>${arr.length}</span></h3><div class="list">${arr.map(p=>{const t=total(p.n);
+   return `<div class="srow ${cls}"><div class="num">${p.n}</div><div class="name"><b>${esc(p.name)}</b><div class="det">${esc(p.u)}</div></div><div class="tot">${t==null?"–":fmt(t)}<small>en stock</small></div>
+   <button class="chk" data-unflag="${p.n}" aria-label="Retirer ${esc(p.name)} de la liste" title="Retirer">✕</button></div>`}).join("")}</div>`:"";
+ return `<div class="zhead"><div><h2>À commander</h2><p>Inventaire du ${esc(fullDate(S.date))}</p></div></div>
+ ${list.length?`${sec("Épuisés (0 en stock)",zero,"out")}${sec("Signalés pendant le comptage",fl,"")}
+ <button class="btn" id="copy" style="width:100%;margin-top:14px">Copier la liste</button><div class="copied" id="copied" role="status"></div>
+ <textarea id="cmdtxt" class="cmdtxt" readonly hidden>${esc(cmdText(zero,fl))}</textarea>`
+ :`<div class="hint">Aucun produit à commander pour l'instant. Les produits comptés à <b>0</b> et ceux signalés avec <b>⚑ À commander</b> apparaissent ici.</div>`}
+ <div class="nav"><button class="btn sec" data-go="${STEP_SAISIE}">← Saisie</button><button class="btn red" id="reset">Nouvel inventaire</button></div>
+ ${S.confirm?`<div class="confirm" role="alert"><b>Effacer tout l'inventaire du ${esc(fullDate(S.date))} ?</b> Toutes les quantités seront supprimées.<div class="nav"><button class="btn sec" id="no">Annuler</button><button class="btn red" id="yes">Oui, tout effacer</button></div></div>`:""}
+ <p class="foot">Les quantités sont enregistrées sur ce téléphone, même si tu fermes la page. Change la date en haut pour retrouver un autre dimanche.</p>`;
+}
+function cmdText(zero,fl){
+ let s=`À commander – inventaire du ${fullDate(S.date)}\n`;
+ if(zero.length)s+=`\nÉpuisés :\n`+zero.map(p=>`- ${p.name}`).join("\n")+"\n";
+ if(fl.length)s+=`\nStock bas :\n`+fl.map(p=>`- ${p.name} (reste ${fmt(total(p.n))} ${p.u})`).join("\n")+"\n";
+ return s;
+}
+function render(){
+ renderHeader();
+ const a=$("#app");
+ if(S.step<NZ){const z=ZONES[S.step];a.innerHTML=S.view==="card"?renderCard(z,S.step):renderList(z,S.step)}
+ else a.innerHTML=S.step===STEP_SAISIE?renderSaisie():renderCmd();
+ bind();
+}
+
+/* ===== ÉVÉNEMENTS ===== */
+function go(step){S.step=step;S.confirm=false;render();scrollTo(0,0);if(S.step<NZ&&S.view==="card")$("#bigq").focus()}
+function bind(){
+ document.querySelectorAll("[data-step]").forEach(b=>b.onclick=()=>go(+b.dataset.step));
+ document.querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>go(+b.dataset.go));
+ const vt=$("#vtog");if(vt)vt.onclick=()=>{S.view=S.view==="card"?"list":"card";render()};
+ if(S.step<NZ&&S.view==="card"){
+  const z=ZONES[S.step];
+  const move=d=>{const i=(S.idx[z.id]||0)+d;
+   if(i<0)return;
+   if(i>=z.items.length){go(S.step+1);return}
+   S.idx[z.id]=i;fillCard(true);updBar()};
+  const inp=$("#bigq");
+  inp.oninput=()=>{const n=z.items[S.idx[z.id]||0];D.q[key(z.id,n)]=inp.value;save();upCalc();updBar();
+   $("#cpos").textContent=`Produit ${(S.idx[z.id]||0)+1} / ${z.items.length} · ${filled(z)} comptés`};
+  inp.onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();move(1)}};
+  $("#next").onclick=()=>move(1);
+  $("#prev").onclick=()=>move(-1);
+  $("#zero").onclick=()=>{inp.value="0";inp.oninput();move(1)};
+  $("#flag").onclick=()=>{const n=z.items[S.idx[z.id]||0];D.flag[n]=!D.flag[n];save();$("#flag").setAttribute("aria-pressed",!!D.flag[n])};
+  fillCard(false);
+ }
+ const inputs=[...document.querySelectorAll(".qty")];
+ inputs.forEach((inp,i)=>{
+  inp.oninput=()=>{D.q[inp.dataset.k]=inp.value;save();const v=evalQty(inp.value);
+   inp.classList.toggle("filled",inp.value!==""&&!isNaN(v));inp.classList.toggle("bad",inp.value!==""&&isNaN(v));updBar()};
+  inp.onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();const nx=inputs[i+1];if(nx){nx.focus();nx.select()}else inp.blur()}};
+  inp.onfocus=()=>inp.select();
+ });
+ const h=$("#hide");if(h)h.onchange=()=>{S.hideDone=h.checked;render()};
+ document.querySelectorAll("[data-done]").forEach(b=>b.onclick=()=>{const n=b.dataset.done;D.done[n]=!D.done[n];save();render()});
+ document.querySelectorAll("[data-unflag]").forEach(b=>b.onclick=()=>{const n=b.dataset.unflag;
+  if(D.flag[n])D.flag[n]=false;else{ZONES.forEach(z=>{if(val(z.id,n)===0)delete D.q[key(z.id,n)]})}save();render()});
+ const c=$("#copy");if(c)c.onclick=()=>{const t=$("#cmdtxt").value;
+  const ok=()=>{$("#copied").textContent="Liste copiée. Colle-la dans WhatsApp ou ton bon de commande."};
+  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(ok).catch(fallback)}else fallback();
+  function fallback(){const ta=$("#cmdtxt");ta.hidden=false;ta.focus();ta.select();try{document.execCommand("copy");ok()}catch(e){$("#copied").textContent="Sélectionne le texte ci-dessus et copie-le."}}};
+ const r=$("#reset");if(r)r.onclick=()=>{S.confirm=true;render();$("#yes").scrollIntoView({block:"center"})};
+ const y=$("#yes");if(y)y.onclick=()=>{D={q:{},done:{},flag:{}};store.del("inv_"+S.date);S.confirm=false;S.idx={};go(0)};
+ const no=$("#no");if(no)no.onclick=()=>{S.confirm=false;render()};
+}
+$("#date").onchange=e=>{if(!e.target.value)return;S.date=e.target.value;D=load(S.date);S.step=0;S.idx={};S.confirm=false;render()};
+render();
+</script>
+
+</body>
+</html>
